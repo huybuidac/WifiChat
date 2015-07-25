@@ -14,6 +14,8 @@ import huybdse02612.fpt.edu.R;
  */
 public class ChatFragment extends Fragment {
 
+    private ViewGroup mContainer;
+//    private
 
     public ChatFragment() {
         // Required empty public constructor

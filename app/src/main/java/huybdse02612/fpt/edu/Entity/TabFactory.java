@@ -5,7 +5,7 @@ import android.view.View;
 import android.widget.TabHost;
 
 /**
- * Created by huy on 7/22/2015.
+ * Created by hoang anh tuan on 7/22/2015.
  */
 public class TabFactory implements TabHost.TabContentFactory {
 

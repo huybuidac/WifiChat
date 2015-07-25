@@ -4,94 +4,50 @@ import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
 
+import java.io.BufferedOutputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.net.Socket;
 
 import huybdse02612.fpt.edu.Entity.CommandMessage;
 import huybdse02612.fpt.edu.Entity.CommandMessageType;
+import huybdse02612.fpt.edu.Util.ConstantVariance;
 
 /**
- * Created by huy on 7/21/2015.
+ * Created by hoang anh tuan on 7/21/2015.
  */
-public class ProClient {
-    ObjectInputStream ois;
-    Socket clientSocket;
-    ObjectOutputStream oos;
-//    UpdateGUI updateGUI;
-    Thread connectServerThread;
-    public boolean running=true;
+public class ProClient extends Thread {
+    private final String TAG=this.getClass().getName();
 
-    Handler mHandler = new Handler() {
-        @Override
-        public void handleMessage(Message msg) {
-//            updateGUI.updateState((CommandMessage)msg.obj);
-        }
-    };
+    private final CommandMessage mCmd;
+    private final DatagramSocket udpSocket;
 
-    public void closeConnection() {
-        try {
-            oos.close();
-            ois.close();
-            clientSocket.close();
-        } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
+    public ProClient(CommandMessage cmd, DatagramSocket udpSocket) {
+        this.mCmd = cmd;
+        this.udpSocket = udpSocket;
     }
 
-    public void sendCommand(CommandMessage command) {
+    @Override
+    public void run() {
         try {
-            oos.writeObject(command);
+            ByteArrayOutputStream byteStream = new ByteArrayOutputStream(1000);
+            ObjectOutputStream os = new ObjectOutputStream(new BufferedOutputStream(byteStream));
+            os.flush();
+            os.writeObject(mCmd);
+            os.flush();
+            //retrieves byte array
+            byte[] sendBuf = byteStream.toByteArray();
+            DatagramPacket packet = new DatagramPacket(sendBuf, sendBuf.length, InetAddress.getByName(mCmd.getmReceiAddress()), ConstantVariance.PORT);
+            udpSocket.send(packet);
+            os.close();
         } catch (Exception e) {
+            Log.e(TAG,e.getMessage());
         }
     }
 
-//    public void setEventListener(UpdateGUI updateGUI) {
-//        this.updateGUI = updateGUI;
-//    }
-
-    public void Start() {
-        connectServerThread = new Thread(new Runnable() {
-            public void run() {
-                try {
-                    Log.e("CHECK CONNECT FAIL", "======================");
-                    clientSocket = new Socket("localhost", 2001);
-                    Log.e("CHECK CONNECT FAIL 222", "======================");
-                    oos = new ObjectOutputStream(
-                            clientSocket.getOutputStream());
-                    ois = new ObjectInputStream(clientSocket.getInputStream());
-                    CommunicationThread commThread = new CommunicationThread();
-                    new Thread(commThread).start();
-                } catch (Exception e) {
-                    Log.e("CONNECT FAIL", "====================");
-                }
-
-            }
-        });
-
-        connectServerThread.start();
-    }
-
-    class CommunicationThread implements Runnable {
-
-        public void run() {
-            while (!Thread.currentThread().isInterrupted() && running) {
-                try {
-                    CommandMessage read = (CommandMessage) ois.readObject();
-                    Log.i("CHECK GET", ""+read.getmType());
-                    Message clientmessage = Message.obtain();
-                    clientmessage.obj = read;
-                    mHandler.sendMessage(clientmessage);
-                } catch (Exception e) {
-                    running=false;
-                    Message clientmessage = Message.obtain();
-                    clientmessage.obj = new CommandMessage(CommandMessageType.DISCONNECT, "");
-                    mHandler.sendMessage(clientmessage);
-                }
-            }
-        }
-
-    }
 }

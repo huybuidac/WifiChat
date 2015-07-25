@@ -4,8 +4,10 @@
     tools:context="huybdse02612.fpt.edu.Fragment.PeopleFragment">
 
     <!-- TODO: Update blank fragment layout -->
-    <TextView android:layout_width="match_parent" android:layout_height="match_parent"
-        android:text="People"
-        android:id="@+id/textView2" />
 
+    <ListView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/listView"
+        android:layout_gravity="left|top" />
 </FrameLayout>

@@ -15,7 +15,7 @@ import huybdse02612.fpt.edu.Fragment.PeopleFragment;
 import huybdse02612.fpt.edu.Fragment.SettingFragment;
 
 /**
- * Created by huy on 7/22/2015.
+ * Created by hoang anh tuan on 7/22/2015.
  */
 public class TabManager implements TabHost.OnTabChangeListener, ViewPager.OnPageChangeListener {
     private ViewPager mViewPager;
