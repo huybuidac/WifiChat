@@ -4,98 +4,246 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.graphics.Color;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentManager;
-import android.support.v4.app.FragmentTransaction;
-import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.view.ViewPager;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.BaseAdapter;
 import android.widget.ListView;
+import android.widget.TextView;
 
 import java.util.ArrayList;
 
+import huybdse02612.fpt.edu.Entity.BadgeView;
 import huybdse02612.fpt.edu.Entity.CommandMessage;
+import huybdse02612.fpt.edu.Entity.CommandMessageType;
 import huybdse02612.fpt.edu.Entity.ListUsers;
 import huybdse02612.fpt.edu.Entity.User;
 import huybdse02612.fpt.edu.R;
-import huybdse02612.fpt.edu.Util.ConstantVariance;
+import huybdse02612.fpt.edu.Service.ProServerService;
+import huybdse02612.fpt.edu.Util.ConstantValue;
 
 /**
  * A simple {@link Fragment} subclass.
  */
 public class PeopleFragment extends Fragment {
 
+    private static final int UPDATE_DOWNLOAD_PROGRESS = 666;
+    private final String TAG = this.getClass().getName();
     private View mPeopleView;
     private ListView mLvPeople;
-    private ArrayAdapter<String> mAdaptorPeople;
+    private MyPeopleAdaptor mAdaptorPeople;
+    Handler myHandler = new Handler() {
+        public void handleMessage(Message msg) {
+            switch (msg.what) {
+                case UPDATE_DOWNLOAD_PROGRESS:
+                    mAdaptorPeople.notifyDataSetChanged();
+                    break;
+                default:
+                    break;
+            }
+        }
+    };
     private ListUsers mLstUsers;
+    private ViewGroup mContainer;
     private BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
             try {
-                String myAction = intent.getStringExtra(ConstantVariance.ACTION);
-                if (myAction.equals(ConstantVariance.ACTION_ADD_USER)) {
-                    User user = (User) intent.getSerializableExtra(ConstantVariance.EXTRA_USER);
+                Log.d(TAG, "GOTO broadcastReceiver onReceive");
+                String myAction = intent.getStringExtra(ConstantValue.ACTION);
+                if (myAction.equals(ConstantValue.ACTION_ADD_USER)) {
+                    final User user = (User) intent.getSerializableExtra(ConstantValue.EXTRA_USER);
+                    final boolean needRespond = intent.getBooleanExtra(ConstantValue.EXTRA_NEED_RESPOND, false);
                     mLstUsers.addUser(user);
-                    mAdaptorPeople.clear();
-                    mAdaptorPeople.addAll(mLstUsers.getListUserName());
-                    mAdaptorPeople.notifyDataSetChanged();
+                    mLvPeople.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            mAdaptorPeople.notifyDataSetChanged();
+                        }
+                    });
+//                    runUpdateThread();
+                    if (needRespond) {
+                        getActivity().startService(new Intent(getActivity(), ProServerService.class)
+                                .setAction(ConstantValue.ACTION_CONNECT)
+                                .putExtra(ConstantValue.EXTRA_COMMAND_MESSAGE,
+                                        new CommandMessage(CommandMessageType.CONNECT_RESPOND,
+                                                mContainer.getTag(R.id.TAG_USER_NAME).toString(),
+                                                "", user.getIpAddress())));
+                    }
                 }
+                if (myAction.equals(ConstantValue.ACTION_RECEIVE_MESSAGE)) {
+                    CommandMessage cmd = (CommandMessage) intent.getSerializableExtra(ConstantValue.EXTRA_CMD);
+                    int curFrag = ((ViewPager) getActivity().findViewById(R.id.pager)).getCurrentItem();
+
+                    User user = (User) mContainer.getTag(R.id.TAG_USER_SELECTED);
+                    if (curFrag == 0 || user == null || !user.getIpAddress().equals(cmd.getSenderAddress())) {
+                        mLstUsers.getUserByIP(cmd.getSenderAddress()).addMessage(cmd.getmFromUser() + ": " + cmd.getContent(),true);
+                    } else {
+                        mLstUsers.getUserByIP(cmd.getSenderAddress()).addMessage(cmd.getmFromUser() + ": " + cmd.getContent(),false);
+                    }
+                    mLvPeople.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            mAdaptorPeople.notifyDataSetChanged();
+                        }
+                    });
+                }
+                Log.d(TAG, "OUT broadcastReceiver onReceive");
             } catch (Exception e) {
                 e.printStackTrace();
             }
         }
     };
-    private ViewGroup mContainer;
 
     private void getViewFromLayout() {
+        Log.d(TAG, "GOTO getViewFromLayout");
         mLvPeople = (ListView) mPeopleView.findViewById(R.id.listView);
+        Log.d(TAG, "OUT getViewFromLayout");
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        // Inflate the layout for this fragment
+        Log.d(TAG, "GOTO onCreateView");
         mContainer = container;
         mPeopleView = inflater.inflate(R.layout.fragment_people, container, false);
 
         getViewFromLayout();
         initData();
-        getActivity().registerReceiver(broadcastReceiver, new IntentFilter(ConstantVariance.MY_BROADCAST));
+        getActivity().registerReceiver(broadcastReceiver, new IntentFilter(ConstantValue.MY_BROADCAST));
+        Log.d(TAG, "OUT onCreateView");
         return mPeopleView;
     }
 
     private void initData() {
-
+        Log.d(TAG, "GOTO initData");
         mLstUsers = new ListUsers();
 
-        mAdaptorPeople = new ArrayAdapter<String>
-                (mPeopleView.getContext(), android.R.layout.simple_list_item_1, mLstUsers.getListUserName());
+        mAdaptorPeople = new MyPeopleAdaptor(getActivity().getApplicationContext());
 
         mLvPeople.setAdapter(mAdaptorPeople);
 
         mLvPeople.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                mContainer.setTag(R.id.TAG_USER_SELECTED, mLstUsers.getUserByIndex(position));
                 ((ViewPager) getActivity().findViewById(R.id.pager)).setCurrentItem(1);
-                mContainer.setTag(ConstantVariance.TAG_USER_SELECTED, mLstUsers.getUserByIndex(position));
+                mLstUsers.getUserByIndex(position).setCount(0);
+                mLvPeople.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        mAdaptorPeople.notifyDataSetChanged();
+                    }
+                });
             }
         });
+        Log.d(TAG, "OUT initData");
     }
 
     @Override
     public void onResume() {
+        Log.d(TAG, "GOTO onResume");
         super.onResume();
-        getActivity().registerReceiver(broadcastReceiver, new IntentFilter(ConstantVariance.MY_BROADCAST));
+        getActivity().registerReceiver(broadcastReceiver, new IntentFilter(ConstantValue.MY_BROADCAST));
+        Log.d(TAG, "OUT onResume");
     }
 
     @Override
     public void onDestroy() {
+        Log.d(TAG, "GOTO onDestroy");
         getActivity().unregisterReceiver(broadcastReceiver);
+        getActivity().stopService(new Intent(getActivity().getApplicationContext(), ProServerService.class));
+        Log.d(TAG, "OUT onDestroy");
     }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+    }
+
+    private void runUpdateThread() {
+        new Thread(
+                new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            Thread.sleep(500); // Sleep for 1 second
+
+                            myHandler.obtainMessage(UPDATE_DOWNLOAD_PROGRESS)
+                                    .sendToTarget();
+                        } catch (InterruptedException e) {
+                            Log.d(TAG, "sleep failure");
+                        }
+
+                    }
+                }).start();
+    }
+
+    private class MyPeopleAdaptor extends BaseAdapter {
+        private final int droidGreen = Color.parseColor("#A4C639");
+        private LayoutInflater mInflater;
+        private Context mContext;
+
+        public MyPeopleAdaptor(Context context) {
+            mInflater = LayoutInflater.from(context);
+            mContext = context;
+        }
+
+        public int getCount() {
+            return mLstUsers.getCount();
+        }
+
+        public Object getItem(int position) {
+            return position;
+        }
+
+        public long getItemId(int position) {
+            return position;
+        }
+
+        public View getView(int position, View convertView, ViewGroup parent) {
+            ViewHolder holder;
+
+            if (convertView == null) {
+                convertView = mInflater.inflate(android.R.layout.simple_list_item_2, null);
+                holder = new ViewHolder();
+                holder.text = (TextView) convertView.findViewById(android.R.id.text1);
+                holder.text.setTextColor(Color.BLACK);
+                holder.badge = new BadgeView(mContext, holder.text);
+                holder.badge.setBadgeBackgroundColor(droidGreen);
+                holder.badge.setTextColor(Color.BLACK);
+                convertView.setTag(holder);
+            } else {
+                holder = (ViewHolder) convertView.getTag();
+            }
+            User user = mLstUsers.getUserByIndex(position);
+            holder.text.setText(user.getSender());
+
+            if (user.getCount() != 0) {
+                holder.badge.setText(String.valueOf(user.getCount()));
+                holder.badge.show();
+            } else {
+                holder.badge.hide();
+            }
+
+
+            return convertView;
+        }
+
+        class ViewHolder {
+            TextView text;
+            BadgeView badge;
+        }
+    }
+
 }

@@ -3,6 +3,9 @@ package huybdse02612.fpt.edu.Adaptor;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
+import android.support.v4.view.ViewPager;
+import android.view.View;
+import android.view.ViewGroup;
 
 import java.util.List;
 
@@ -23,5 +26,10 @@ public class MyPagerAdaptor extends FragmentPagerAdapter {
     @Override
     public int getCount() {
         return this.mFragments.size();
+    }
+
+    @Override
+    public void destroyItem(ViewGroup container, int position, Object object) {
+//        ((ViewPager) container).removeView((View) object);
     }
 }

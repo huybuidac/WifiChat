@@ -1,5 +1,7 @@
 package huybdse02612.fpt.edu.Entity;
 
+import android.text.TextUtils;
+
 import java.io.Serializable;
 import java.util.ArrayList;
 
@@ -8,41 +10,75 @@ import java.util.ArrayList;
  */
 public class User implements Serializable {
     private String mIpAddress;
-    private String mName;
+    private String mSender;
+    private String mReceiver;
     private boolean mIsOnline;
-    private ArrayList mLstMessages;
+    private ArrayList<String> mLstMessages;
+    private int mCount;
 
-    public User(String mIpAddress, String mName) {
+    public User(String mIpAddress, String mSender, String mReceiver) {
         this.mIpAddress = mIpAddress;
-        this.mName = mName;
-        mLstMessages=new ArrayList();
+        this.mSender = mSender;
+        this.mReceiver=mReceiver;
+        this.mIsOnline =true;
+        this.mLstMessages = new ArrayList();
+        this.mCount=0;
     }
 
-    public String getmIpAddress() {
+    public String getAllMessage(){
+        return TextUtils.join("\r\n", mLstMessages)+"\r\n";
+    }
+
+    public void addMessage(String mess,boolean addCount) {
+        mLstMessages.add(mess);
+        if (addCount) {
+            mCount++;
+        } else {
+            mCount=0;
+        }
+    }
+
+    public String getIpAddress() {
         return mIpAddress;
     }
 
-    public String getmName() {
-        return mName;
+    public String getSender() {
+        return mSender;
     }
 
-    public void setmName(String mName) {
-        this.mName = mName;
+    public void setSender(String mSender) {
+        this.mSender = mSender;
     }
 
-    public boolean ismIsOnline() {
+    public boolean isIsOnline() {
         return mIsOnline;
     }
 
-    public void setmIsOnline(boolean mIsOnline) {
+    public void setIsOnline(boolean mIsOnline) {
         this.mIsOnline = mIsOnline;
     }
 
-    public ArrayList getmLstMessages() {
+    public ArrayList getLstMessages() {
         return mLstMessages;
     }
 
-    public void setmLstMessages(ArrayList mLstMessages) {
-        this.mLstMessages = mLstMessages;
+    public void setLstMessages(ArrayList mLstMessages) {
+        this.mLstMessages = new ArrayList<String>(mLstMessages);
+    }
+
+    public String getReceiver() {
+        return mReceiver;
+    }
+
+    public void setReceiver(String mReceiver) {
+        this.mReceiver = mReceiver;
+    }
+
+    public int getCount() {
+        return mCount;
+    }
+
+    public void setCount(int mCount) {
+        this.mCount = mCount;
     }
 }

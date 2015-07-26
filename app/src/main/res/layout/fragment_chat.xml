@@ -1,10 +1,66 @@
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools" android:layout_width="match_parent"
-    android:layout_height="match_parent" tools:context="huybdse02612.fpt.edu.Fragment.ChatFragment">
+    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        tools:context="huybdse02612.fpt.edu.Fragment.ChatFragment"
+        android:screenOrientation="portrait"
+        android:orientation="vertical">
 
-    <!-- TODO: Update blank fragment layout -->
-    <TextView android:layout_width="match_parent" android:layout_height="match_parent"
-        android:text="Chat"
-        android:id="@+id/textView" />
+        <ScrollView
+            android:visibility="visible"
+            android:layout_width="match_parent"
+            android:keepScreenOn="true"
+            android:scrollbarStyle="insideInset"
+            android:id="@+id/scrollView1"
+            android:layout_height="0dp"
+            android:scrollbars="vertical"
+            android:layout_weight="1">
 
-</FrameLayout>
+            <TextView
+                android:isScrollContainer="true"
+                android:layout_width="fill_parent"
+                android:id="@+id/tvChatArea"
+                android:scrollbars="vertical"
+                android:layout_gravity="top"
+                android:keepScreenOn="true"
+                android:layout_height="wrap_content"
+                android:textColor="#000000"
+                android:textSize="20sp"
+                >
+            </TextView>
+
+        </ScrollView>
+
+        <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <LinearLayout
+                android:orientation="vertical"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1">
+
+                <EditText
+                    android:id="@+id/edtInput"
+                    android:layout_width="fill_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1">
+                </EditText>
+                <View
+                    android:layout_width="fill_parent"
+                    android:layout_height="2dp"
+                    android:background="@android:color/darker_gray" />
+            </LinearLayout>
+
+            <Button
+                android:text="@string/btnSend"
+                android:id="@+id/btnSend"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent">
+            </Button>
+
+        </LinearLayout>
+
+    </LinearLayout>

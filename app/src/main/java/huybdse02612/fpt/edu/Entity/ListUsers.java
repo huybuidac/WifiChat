@@ -1,7 +1,6 @@
 package huybdse02612.fpt.edu.Entity;
 
 import java.util.ArrayList;
-import java.util.Dictionary;
 import java.util.HashMap;
 
 /**
@@ -19,15 +18,16 @@ public class ListUsers {
     }
 
     public void addUser(User user) {
-        if (!dicPeople.containsKey(user.getmIpAddress())){
-            dicPeople.put(user.getmIpAddress(),user);
+        if (!dicPeople.containsKey(user.getIpAddress())){
+            dicPeople.put(user.getIpAddress(),user);
         }
     }
 
     public ArrayList<String> getListUserName() {
         ArrayList<String> alUsers=new ArrayList<>();
         for (User user : dicPeople.values()) {
-            alUsers.add(user.getmName());
+            String name = new String(user.getSender());
+            alUsers.add(name);
         }
         return alUsers;
     }

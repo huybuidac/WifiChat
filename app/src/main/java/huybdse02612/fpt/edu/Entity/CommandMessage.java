@@ -10,6 +10,7 @@ public class CommandMessage implements Serializable {
     private String mFromUser;
     private String mContent;
     private String mReceiAddress;
+    private String mSenderAddress;
 
     public CommandMessage(CommandMessageType mType, String from , String mContent, String receiAddres) {
         super();
@@ -44,19 +45,27 @@ public class CommandMessage implements Serializable {
         this.mFromUser = mFromUser;
     }
 
-    public String getmContent() {
+    public String getContent() {
         return mContent;
     }
 
-    public void setmContent(String mContent) {
+    public void setContent(String mContent) {
         this.mContent = mContent;
     }
 
-    public String getmReceiAddress() {
+    public String getReceiAddress() {
         return mReceiAddress;
     }
 
     public void setmReceiAddress(String mReceiAddress) {
         this.mReceiAddress = mReceiAddress;
+    }
+
+    public String getSenderAddress() {
+        return mSenderAddress;
+    }
+
+    public void setSenderAddress(String mSenderAddress) {
+        this.mSenderAddress = mSenderAddress;
     }
 }

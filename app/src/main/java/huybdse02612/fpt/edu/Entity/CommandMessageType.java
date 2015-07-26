@@ -8,5 +8,6 @@ import java.io.Serializable;
 public enum CommandMessageType implements Serializable {
     CONNECT,
     DISCONNECT,
-    MESSAGE
+    MESSAGE,
+    CONNECT_RESPOND
 }

@@ -1,26 +1,22 @@
 package huybdse02612.fpt.edu.Activity;
 
-import android.content.BroadcastReceiver;
-import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.view.ViewPager;
-import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.TabHost;
 
 import huybdse02612.fpt.edu.Entity.TabManager;
-import huybdse02612.fpt.edu.Entity.User;
 import huybdse02612.fpt.edu.R;
 import huybdse02612.fpt.edu.Service.ProServerService;
-import huybdse02612.fpt.edu.Util.ConstantVariance;
 
 
 public class MainActivity extends FragmentActivity {
 
+    private final String TAG = this.getClass().getName();
     private ViewPager mViewPager;
     private TabHost mTabHost;
     private TabManager mTabBar;
@@ -31,7 +27,7 @@ public class MainActivity extends FragmentActivity {
         setContentView(R.layout.activity_main);
         getViewFromLayout();
         mTabBar = new TabManager(mTabHost,mViewPager,this);
-        startService(new Intent(getApplicationContext(), ProServerService.class));
+//        startService(new Intent(getApplicationContext(), ProServerService.class));
     }
 
     public void getViewFromLayout() {
@@ -63,7 +59,17 @@ public class MainActivity extends FragmentActivity {
 
     @Override
     protected void onDestroy() {
-        super.onDestroy();
-        stopService(new Intent(getApplicationContext(), ProServerService.class));
+        try {
+            super.onDestroy();
+            stopService(new Intent(getApplicationContext(), ProServerService.class));
+        } catch (Exception e) {
+            Log.e(TAG,"MainACtivity exception");
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
     }
 }

@@ -41,27 +41,19 @@
             android:id="@+id/textView3" />
 
         <EditText
-            android:layout_width="wrap_content"
+            android:layout_width="fill_parent"
             android:layout_height="wrap_content"
             android:inputType="textPersonName"
             android:text="Name"
             android:ems="10"
             android:id="@+id/edtName" />
+
     </LinearLayout>
 
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/btn_gotolanchat"
-        android:id="@+id/btnGotoChat"
-        android:layout_gravity="center_horizontal"
-        android:visibility="visible" />
-
-    <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="New Button"
-        android:id="@+id/button"
-        android:layout_gravity="center_horizontal" />
+        android:text="@string/btnSetName"
+        android:id="@+id/btnSetname" />
 
 </LinearLayout>
