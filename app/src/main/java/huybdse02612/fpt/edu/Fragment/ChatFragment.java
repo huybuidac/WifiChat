@@ -44,7 +44,7 @@ public class ChatFragment extends Fragment {
         @Override
         public void onReceive(Context context, Intent intent) {
             try {
-                Log.d(TAG,"GOTO broadcastReceiver onReceive");
+                Log.d(TAG, "GOTO broadcastReceiver onReceive");
                 String myAction = intent.getStringExtra(ConstantValue.ACTION);
                 if (myAction.equals(ConstantValue.ACTION_RECEIVE_MESSAGE)) {
                     CommandMessage cmd = (CommandMessage) intent.getSerializableExtra(ConstantValue.EXTRA_CMD);
@@ -54,7 +54,7 @@ public class ChatFragment extends Fragment {
                         scrollToLastLine();
                     }
                 }
-                Log.d(TAG,"OUT broadcastReceiver onReceive");
+                Log.d(TAG, "OUT broadcastReceiver onReceive");
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -70,21 +70,16 @@ public class ChatFragment extends Fragment {
     }
 
     @Override
-    public void onAttach(Activity activity) {
-        super.onAttach(activity);
-    }
-
-    @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        Log.d(TAG,"GOTO onCreateView");
-        mChatFrag  = inflater.inflate(R.layout.fragment_chat, container, false);
+        Log.d(TAG, "GOTO onCreateView");
+        mChatFrag = inflater.inflate(R.layout.fragment_chat, container, false);
 
         getViewFromLayout();
         setEvent();
 
-        mContainer=container;
-        Log.d(TAG,"OUT onCreateView");
+        mContainer = container;
+        Log.d(TAG, "OUT onCreateView");
         return mChatFrag;
     }
 
@@ -93,17 +88,17 @@ public class ChatFragment extends Fragment {
             @Override
             public void onClick(View v) {
                 try {
-                    if (mCurUser==null) return;
-                    String mess =  mEdtInput.getText().toString();
-                    mCurUser.addMessage("You: " +mess,false);
-                    mTvChatArea.append("You: " +mess + "\r\n");
+                    if (mCurUser == null) return;
+                    String mess = mEdtInput.getText().toString();
+                    mCurUser.addMessage("You: " + mess, false);
+                    mTvChatArea.append("You: " + mess + "\r\n");
                     mEdtInput.setText("");
                     getActivity().startService(new Intent(getActivity(), ProServerService.class)
                             .setAction(ConstantValue.ACTION_SEND_MESSAGE)
                             .putExtra(ConstantValue.EXTRA_COMMAND_MESSAGE, new CommandMessage(CommandMessageType.MESSAGE, mName, mess, mCurUser.getIpAddress())));
                     scrollToLastLine();
                 } catch (Exception e) {
-                    Log.e(TAG,"mBtnSend Onclick");
+                    Log.e(TAG, "mBtnSend Onclick");
                     e.printStackTrace();
                 }
             }
@@ -111,15 +106,39 @@ public class ChatFragment extends Fragment {
     }
 
     private void getViewFromLayout() {
-        mBtnSend= (Button) mChatFrag.findViewById(R.id.btnSend);
-        mTvChatArea= (TextView) mChatFrag.findViewById(R.id.tvChatArea);
+        mBtnSend = (Button) mChatFrag.findViewById(R.id.btnSend);
+        mTvChatArea = (TextView) mChatFrag.findViewById(R.id.tvChatArea);
         mEdtInput = (EditText) mChatFrag.findViewById(R.id.edtInput);
         mScrollView = (ScrollView) mChatFrag.findViewById(R.id.scrollView1);
     }
 
     @Override
+    public void setMenuVisibility(boolean menuVisible) {
+        Log.d(TAG, "GOTO setMenuVisibility");
+        super.setMenuVisibility(menuVisible);
+        try {
+            if (menuVisible) {
+                mCurUser = (User) mContainer.getTag(R.id.TAG_USER_SELECTED);
+                if (mCurUser != null) {
+                    mTvChatArea.setText(mCurUser.getAllMessage());
+                    scrollToLastLine();
+                }
+                mName = (String) mContainer.getTag(R.id.TAG_USER_NAME);
+                if (mName == null) mName = "Unknown";
+            } else {
+                InputMethodManager imm = (InputMethodManager) getActivity().getSystemService(getActivity().getApplicationContext().INPUT_METHOD_SERVICE);
+                imm.hideSoftInputFromWindow(mEdtInput.getWindowToken(), 0);
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "setMenuVisibility exception");
+            e.printStackTrace();
+        }
+        Log.d(TAG, "OUT setMenuVisibility");
+    }
+
+    @Override
     public void onDestroy() {
-        Log.d(TAG,"GOTO onDestroy");
+        Log.d(TAG, "GOTO onDestroy");
         super.onDestroy();
         getActivity().unregisterReceiver(broadcastReceiver);
         getActivity().stopService(new Intent(getActivity().getApplicationContext(), ProServerService.class));
@@ -128,47 +147,10 @@ public class ChatFragment extends Fragment {
 
     @Override
     public void onResume() {
-        Log.d(TAG,"GOTO onResume");
+        Log.d(TAG, "GOTO onResume");
         super.onResume();
         getActivity().registerReceiver(broadcastReceiver, new IntentFilter(ConstantValue.MY_BROADCAST));
         Log.d(TAG, "OUT onResume");
     }
 
-    @Override
-    public void setMenuVisibility(boolean menuVisible){
-        Log.d(TAG,"GOTO setMenuVisibility");
-        super.setMenuVisibility(menuVisible);
-        try {
-            if (menuVisible) {
-                mCurUser = (User) mContainer.getTag(R.id.TAG_USER_SELECTED);
-                if (mCurUser!=null) {
-                    mTvChatArea.setText(mCurUser.getAllMessage());
-                    scrollToLastLine();
-                }
-                mName = (String) mContainer.getTag(R.id.TAG_USER_NAME);
-                if (mName==null) mName="Unknown";
-            } else {
-//                mContainer.setTag(R.id.TAG_USER_SELECTED,mCurUser);
-                InputMethodManager imm = (InputMethodManager)getActivity().getSystemService(getActivity().getApplicationContext().INPUT_METHOD_SERVICE);
-                imm.hideSoftInputFromWindow(mEdtInput.getWindowToken(), 0);
-            }
-        } catch (Exception e) {
-            Log.e(TAG,"setMenuVisibility exception");
-            e.printStackTrace();
-        }
-        Log.d(TAG,"OUT setMenuVisibility");
-    }
-
-    @Override
-    public void onPause() {
-        Log.d(TAG, "GOTO onPause");
-        super.onPause();
-        try {
-
-        } catch (Exception e) {
-            Log.e(TAG,"onPause");
-            e.printStackTrace();
-        }
-        Log.d(TAG, "OUT onPause");
-    }
 }

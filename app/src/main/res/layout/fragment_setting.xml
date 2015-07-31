@@ -41,19 +41,21 @@
             android:id="@+id/textView3" />
 
         <EditText
-            android:layout_width="fill_parent"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:inputType="textPersonName"
             android:text="Name"
             android:ems="10"
-            android:id="@+id/edtName" />
+            android:id="@+id/edtName"
+            android:layout_weight="1"
+            />
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/btnSetName"
+            android:id="@+id/btnSetname" />
 
     </LinearLayout>
-
-    <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/btnSetName"
-        android:id="@+id/btnSetname" />
 
 </LinearLayout>

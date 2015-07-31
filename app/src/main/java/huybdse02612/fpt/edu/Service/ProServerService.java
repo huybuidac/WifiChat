@@ -7,7 +7,6 @@ import android.util.Log;
 
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -18,7 +17,6 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 
 import huybdse02612.fpt.edu.Entity.CommandMessage;
-import huybdse02612.fpt.edu.Entity.CommandMessageType;
 import huybdse02612.fpt.edu.Entity.ProClient;
 import huybdse02612.fpt.edu.Entity.User;
 import huybdse02612.fpt.edu.Util.ConstantValue;
@@ -32,18 +30,21 @@ public class ProServerService extends Service {
     Thread waitClientThread;
     private boolean mIsRunning;
     private DatagramSocket udpSocket;
+    private ArrayList<String> mListLocalAddress;
+    private Intent mMyBroadCast;
 
     @Override
     public void onCreate() {
         Log.d(TAG, "GOTO onCreate");
         try {
-            mListLocalAddress=new ArrayList<>();
+            mListLocalAddress = new ArrayList<>();
             getLocalIpAddress();
             mIsRunning = true;
+            mMyBroadCast = new Intent(ConstantValue.MY_BROADCAST);
             startListening();
             Thread.sleep(500);
         } catch (Exception e) {
-            Log.e(TAG,"onCreate Exception");
+            Log.e(TAG, "onCreate Exception");
             e.printStackTrace();
         }
         Log.d(TAG, "OUT onCreate");
@@ -51,9 +52,9 @@ public class ProServerService extends Service {
 
     @Override
     public int onStartCommand(final Intent intent, int flags, int startId) {
-        Log.d(TAG,"GOTO onStartCommand");
+        Log.d(TAG, "GOTO onStartCommand");
         try {
-            if (mIsRunning!=true) startListening();
+            if (mIsRunning != true) startListening();
             if (intent.getAction() != null) {
                 CommandMessage cmd = (CommandMessage) intent.getSerializableExtra(ConstantValue.EXTRA_COMMAND_MESSAGE);
                 switch (intent.getAction()) {
@@ -73,31 +74,33 @@ public class ProServerService extends Service {
             Log.e(TAG, "onStartCommand Exception");
             e.getStackTrace();
         }
-        Log.d(TAG,"OUT onStartCommand");
+        Log.d(TAG, "OUT onStartCommand");
         return super.onStartCommand(intent, flags, startId);
     }
 
-    private ArrayList<String> mListLocalAddress;
-
     private void getLocalIpAddress() {
         try {
-            for (Enumeration<NetworkInterface> en = NetworkInterface.getNetworkInterfaces(); en.hasMoreElements();) {
+            for (Enumeration<NetworkInterface> en = NetworkInterface.getNetworkInterfaces(); en.hasMoreElements(); ) {
                 NetworkInterface intf = en.nextElement();
-                for (Enumeration<InetAddress> enumIpAddr = intf.getInetAddresses(); enumIpAddr.hasMoreElements();) {
+                for (Enumeration<InetAddress> enumIpAddr = intf.getInetAddresses(); enumIpAddr.hasMoreElements(); ) {
                     InetAddress inetAddress = enumIpAddr.nextElement();
-                    if (!inetAddress.isLoopbackAddress()) { mListLocalAddress.add(inetAddress.getHostAddress().toString()); }
+                    if (!inetAddress.isLoopbackAddress()) {
+                        mListLocalAddress.add(inetAddress.getHostAddress().toString());
+                    }
                 }
             }
         } catch (SocketException ex) {
             Log.e("ServerActivity", ex.toString());
         }
     }
+
     @Override
     public void onDestroy() {
-        Log.d(TAG,"GOTO onDestroy");
+        Log.d(TAG, "GOTO onDestroy");
+        notifyStopService();
         closeServer();
         super.onDestroy();
-        Log.d(TAG, "GOTO onDestroy");
+        Log.d(TAG, "OUT onDestroy");
     }
 
     @Override
@@ -105,28 +108,27 @@ public class ProServerService extends Service {
         return null;
     }
 
-
     public void closeServer() {
-        Log.d(TAG,"GOTO closeServer");
+        Log.d(TAG, "GOTO closeServer");
         try {
             mIsRunning = false;
             udpSocket.close();
         } catch (Exception e) {
-            Log.e(TAG,"closeServer exception");
+            Log.e(TAG, "closeServer exception");
             e.getStackTrace();
         }
-        Log.d(TAG,"GOTO closeServer");
+        Log.d(TAG, "OUT closeServer");
     }
 
     public void startListening() {
-        Log.d(TAG,"GOTO startListening");
+        Log.d(TAG, "GOTO startListening");
         waitClientThread = new Thread(new Runnable() {
             public void run() {
                 try {
                     udpSocket = new DatagramSocket(ConstantValue.PORT);
                     while (mIsRunning) {
                         try {
-                            Log.d(TAG,"GOTO receive mess");
+                            Log.d(TAG, "GOTO receive mess");
                             byte[] recvBuf = new byte[1000];
                             DatagramPacket packet = new DatagramPacket(recvBuf, recvBuf.length);
                             udpSocket.receive(packet);
@@ -138,12 +140,10 @@ public class ProServerService extends Service {
                             is.close();
                             switch (cmd.getmType()) {
                                 case CONNECT:
-                                    updatePeopleGui(cmd.getmFromUser(),packet.getAddress().toString().replace("/",""),true);
-//                                    ProClient client = new ProClient(new CommandMessage(CommandMessageType.CONNECT,), udpSocket);
-//                                    client.start();
+                                    updatePeopleGui(cmd.getmFromUser(), packet.getAddress().toString().replace("/", ""), true);
                                     break;
                                 case CONNECT_RESPOND:
-                                    updatePeopleGui(cmd.getmFromUser(),packet.getAddress().toString().replace("/",""),false);
+                                    updatePeopleGui(cmd.getmFromUser(), packet.getAddress().toString().replace("/", ""), false);
                                     break;
                                 case DISCONNECT:
                                     break;
@@ -155,7 +155,7 @@ public class ProServerService extends Service {
                             Log.e(TAG, "Wait receive mess EXCEPTION");
                             e.getStackTrace();
                         }
-                        Log.d(TAG,"OUT receive mess");
+                        Log.d(TAG, "OUT receive mess");
                     }
                 } catch (Exception e) {
                     Log.e(TAG, "startListening excepetion");
@@ -168,33 +168,42 @@ public class ProServerService extends Service {
     }
 
     private synchronized void updateChatGui(CommandMessage cmd) {
-        Log.d(TAG,"GOTO updateChatGui");
+        Log.d(TAG, "GOTO updateChatGui");
         try {
-            intent = new Intent(ConstantValue.MY_BROADCAST);
-            intent.putExtra(ConstantValue.ACTION, ConstantValue.ACTION_RECEIVE_MESSAGE);
-            intent.putExtra(ConstantValue.EXTRA_CMD,cmd);
-            getApplicationContext().sendBroadcast(intent);
+            mMyBroadCast = new Intent(ConstantValue.MY_BROADCAST);
+            mMyBroadCast.putExtra(ConstantValue.ACTION, ConstantValue.ACTION_RECEIVE_MESSAGE);
+            mMyBroadCast.putExtra(ConstantValue.EXTRA_CMD, cmd);
+            getApplicationContext().sendBroadcast(mMyBroadCast);
         } catch (Exception e) {
             e.printStackTrace();
         }
-        Log.d(TAG,"OUT updateChatGui");
+        Log.d(TAG, "OUT updateChatGui");
     }
 
-    Intent intent;
     private synchronized void updatePeopleGui(String user, String ipAddress, boolean isNeedRespon) {
-        Log.d(TAG,"GOTO updatePeopleGui");
+        Log.d(TAG, "GOTO updatePeopleGui");
         try {
             if (mListLocalAddress.contains(ipAddress)) return;
-            User newUser = new User(ipAddress,user,"");
-            intent = new Intent(ConstantValue.MY_BROADCAST);
-            intent.putExtra(ConstantValue.ACTION, ConstantValue.ACTION_ADD_USER);
-            intent.putExtra(ConstantValue.EXTRA_USER,newUser);
-            intent.putExtra(ConstantValue.EXTRA_NEED_RESPOND,isNeedRespon);
-            getApplicationContext().sendBroadcast(intent);
+            User newUser = new User(ipAddress, user, "");
+            mMyBroadCast.putExtra(ConstantValue.ACTION, ConstantValue.ACTION_ADD_USER);
+            mMyBroadCast.putExtra(ConstantValue.EXTRA_USER, newUser);
+            mMyBroadCast.putExtra(ConstantValue.EXTRA_NEED_RESPOND, isNeedRespon);
+            getApplicationContext().sendBroadcast(mMyBroadCast);
         } catch (Exception e) {
             e.printStackTrace();
         }
-        Log.d(TAG,"OUT updatePeopleGui");
+        Log.d(TAG, "OUT updatePeopleGui");
+    }
+
+    private synchronized void notifyStopService() {
+        Log.d(TAG, "GOTO notifyStopService");
+        try {
+            mMyBroadCast.putExtra(ConstantValue.ACTION, ConstantValue.ACTION_STOP_SERVICE);
+            getApplicationContext().sendBroadcast(mMyBroadCast);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        Log.d(TAG, "OUT notifyStopService");
     }
 
 }

@@ -17,4 +17,5 @@ public class ConstantValue {
     public static final String EXTRA_USER="extra_user";
     public static final String EXTRA_CMD = "extra_cmd";
     public static final String EXTRA_NEED_RESPOND = "need_respond";
+    public static final String ACTION_STOP_SERVICE = "stop_service";
 }

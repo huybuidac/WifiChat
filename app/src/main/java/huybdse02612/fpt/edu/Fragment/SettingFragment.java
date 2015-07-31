@@ -1,7 +1,15 @@
 package huybdse02612.fpt.edu.Fragment;
 
 
+import android.app.AlertDialog;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
+import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.util.Log;
@@ -20,6 +28,7 @@ import huybdse02612.fpt.edu.Entity.User;
 import huybdse02612.fpt.edu.R;
 import huybdse02612.fpt.edu.Service.ProServerService;
 import huybdse02612.fpt.edu.Util.ConstantValue;
+import huybdse02612.fpt.edu.Util.PreferencesLib;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -32,7 +41,32 @@ public class SettingFragment extends Fragment {
     private View mSettingView;
     private ViewGroup mContainer;
     private Button mBtnSetname;
+    private BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            Log.d(TAG, "GOTO broadcastReceiver onReceive");
+            try {
+                if (intent.getAction().equals(ConnectivityManager.CONNECTIVITY_ACTION)) {
+                    Log.d("NetworkCheckReceiver", "NetworkCheckReceiver invoked...");
 
+                    boolean noConnectivity = intent.getBooleanExtra(
+                            ConnectivityManager.EXTRA_NO_CONNECTIVITY, false);
+
+                    if (!noConnectivity) {
+                        if (swtEnableLanChat!=null && swtEnableLanChat.isChecked()) {
+                            context.stopService(new Intent(context, ProServerService.class));
+                            swtEnableLanChat.setChecked(false);
+                        }
+                    }
+                }
+
+            } catch (Exception e) {
+                Log.e(TAG, "broadcastReceiver onReceive exception");
+                e.printStackTrace();
+            }
+            Log.d(TAG, "OUT broadcastReceiver onReceive");
+        }
+    };
 
     private void setEventForView() {
         Log.d(TAG, "GOTO setEventForView");
@@ -40,6 +74,7 @@ public class SettingFragment extends Fragment {
             @Override
             public void onClick(View v) {
                 mContainer.setTag(R.id.TAG_USER_NAME, mEdtName.getText().toString());
+                PreferencesLib.writeString(getActivity(),PreferencesLib.NAME,mEdtName.getText().toString());
             }
         });
         swtEnableLanChat.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
@@ -47,18 +82,40 @@ public class SettingFragment extends Fragment {
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 try {
                     if (isChecked) {
-                        mContainer.setTag(R.id.TAG_USER_NAME, mEdtName.getText().toString());
-                        getActivity().startService(new Intent(getActivity(), ProServerService.class)
-                                .setAction(ConstantValue.ACTION_CONNECT)
-                                .putExtra(ConstantValue.EXTRA_COMMAND_MESSAGE,
-                                        new CommandMessage(CommandMessageType.CONNECT,
-                                                ((EditText) getActivity().findViewById(R.id.edtName)).getText().toString(),
-                                                "", "255.255.255.255")));
+                        ConnectivityManager connManager = (ConnectivityManager) getActivity().getSystemService(Context.CONNECTIVITY_SERVICE);
+                        NetworkInfo mWifi = connManager.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
+                        if (!mWifi.isConnected()) {
+                            swtEnableLanChat.setChecked(false);
+                            new AlertDialog.Builder(getActivity())
+                                    .setTitle("Info")
+                                    .setMessage("Wifi is not available!")
+                                    .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+                                        public void onClick(DialogInterface dialog, int which) {
+                                            // continue with delete
+                                        }
+                                    })
+                                    .setNegativeButton(android.R.string.no, new DialogInterface.OnClickListener() {
+                                        public void onClick(DialogInterface dialog, int which) {
+                                            // do nothing
+                                        }
+                                    })
+                                    .setIcon(android.R.drawable.ic_dialog_alert)
+                                    .show();
+                        } else {
+                            mContainer.setTag(R.id.TAG_USER_NAME, mEdtName.getText().toString());
+                            getActivity().startService(new Intent(getActivity(), ProServerService.class)
+                                    .setAction(ConstantValue.ACTION_CONNECT)
+                                    .putExtra(ConstantValue.EXTRA_COMMAND_MESSAGE,
+                                            new CommandMessage(CommandMessageType.CONNECT,
+                                                    ((EditText) getActivity().findViewById(R.id.edtName)).getText().toString(),
+                                                    "", "255.255.255.255")));
+                        }
                     } else {
                         getActivity().stopService(new Intent(getActivity(), ProServerService.class));
                     }
                 } catch (Exception e) {
-                    Log.e(TAG, e.getMessage());
+                    Log.e(TAG,"swtEnableLanChat.setOnCheckedChangeListener");
+                    e.getStackTrace();
                 }
             }
         });
@@ -81,40 +138,24 @@ public class SettingFragment extends Fragment {
         mSettingView = inflater.inflate(R.layout.fragment_setting, container, false);
         getViewFromLayout();
         setEventForView();
+        IntentFilter filterWifiState = new IntentFilter();
+        filterWifiState.addAction("android.net.conn.CONNECTIVITY_CHANGE");
+        getActivity().registerReceiver(broadcastReceiver, filterWifiState);
+        String name = PreferencesLib.readString(getActivity(),PreferencesLib.NAME,"name");
+        mEdtName.setText(name);
         Log.d(TAG, "OUT onCreateView");
         return mSettingView;
     }
 
     @Override
-    public void onDestroy() {
-        Log.d(TAG, "GOTO onDestroy");
-        super.onDestroy();
-        getActivity().stopService(new Intent(getActivity(), ProServerService.class));
-        Log.d(TAG, "OUT onDestroy");
-    }
-
-    @Override
-    public void onPause() {
-        Log.d(TAG, "GOTO onPause");
-        super.onPause();
-        try {
-
-        } catch (Exception e) {
-            Log.e(TAG, "onPause");
-            e.printStackTrace();
-        }
-        Log.d(TAG, "OUT onPause");
-    }
-
-    @Override
     public void setMenuVisibility(boolean menuVisible) {
-        Log.d(TAG,"GOTO setMenuVisibility");
+        Log.d(TAG, "GOTO setMenuVisibility");
         super.setMenuVisibility(menuVisible);
         try {
-            InputMethodManager imm = (InputMethodManager)getActivity().getSystemService(getActivity().getApplicationContext().INPUT_METHOD_SERVICE);
+            InputMethodManager imm = (InputMethodManager) getActivity().getSystemService(getActivity().getApplicationContext().INPUT_METHOD_SERVICE);
             imm.hideSoftInputFromWindow(mEdtName.getWindowToken(), 0);
         } catch (Exception e) {
-            Log.e(TAG,"setMenuVisibility exception");
+            Log.e(TAG, "setMenuVisibility exception");
             e.printStackTrace();
         }
         Log.d(TAG, "OUT setMenuVisibility");
@@ -127,4 +168,19 @@ public class SettingFragment extends Fragment {
         super.onDestroyView();
         Log.d(TAG, "OUT onDestroyView");
     }
+
+    @Override
+    public void onDestroy() {
+        Log.d(TAG, "GOTO onDestroy");
+        super.onDestroy();
+        getActivity().stopService(new Intent(getActivity(), ProServerService.class));
+        Log.d(TAG, "OUT onDestroy");
+    }
+
+//    @Override
+//    public void onResume() {
+//        Log.d(TAG, "GOTO onResume");
+//
+//        Log.d(TAG, "OUT onResume");
+//    }
 }

@@ -6,7 +6,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 
 /**
- * Created by hoang anh tuan on 7/23/2015.
+ * Created by huy on 7/23/2015.
  */
 public class User implements Serializable {
     private String mIpAddress;

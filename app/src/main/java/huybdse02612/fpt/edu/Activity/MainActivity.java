@@ -27,7 +27,6 @@ public class MainActivity extends FragmentActivity {
         setContentView(R.layout.activity_main);
         getViewFromLayout();
         mTabBar = new TabManager(mTabHost,mViewPager,this);
-//        startService(new Intent(getApplicationContext(), ProServerService.class));
     }
 
     public void getViewFromLayout() {

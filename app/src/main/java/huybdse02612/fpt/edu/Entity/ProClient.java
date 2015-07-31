@@ -12,7 +12,7 @@ import java.net.InetAddress;
 import huybdse02612.fpt.edu.Util.ConstantValue;
 
 /**
- * Created by hoang anh tuan on 7/21/2015.
+ * Created by huy bui dac on 7/21/2015.
  */
 public class ProClient extends Thread {
     private final String TAG=this.getClass().getName();

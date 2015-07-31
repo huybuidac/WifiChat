@@ -44,4 +44,7 @@ public class ListUsers {
         }
     }
 
+    public void clear() {
+        dicPeople.clear();
+    }
 }

@@ -1,7 +1,9 @@
 package huybdse02612.fpt.edu.Fragment;
 
+import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.Color;
@@ -11,17 +13,16 @@ import android.os.Message;
 import android.support.v4.app.Fragment;
 import android.support.v4.view.ViewPager;
 import android.util.Log;
+import android.view.ContextMenu;
 import android.view.LayoutInflater;
+import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.BaseAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
-
-import java.util.ArrayList;
 
 import huybdse02612.fpt.edu.Entity.BadgeView;
 import huybdse02612.fpt.edu.Entity.CommandMessage;
@@ -37,15 +38,16 @@ import huybdse02612.fpt.edu.Util.ConstantValue;
  */
 public class PeopleFragment extends Fragment {
 
-    private static final int UPDATE_DOWNLOAD_PROGRESS = 666;
+    private static final int UPDATE_LISTVIEW = 666;
     private final String TAG = this.getClass().getName();
     private View mPeopleView;
     private ListView mLvPeople;
     private MyPeopleAdaptor mAdaptorPeople;
+
     Handler myHandler = new Handler() {
         public void handleMessage(Message msg) {
             switch (msg.what) {
-                case UPDATE_DOWNLOAD_PROGRESS:
+                case UPDATE_LISTVIEW:
                     mAdaptorPeople.notifyDataSetChanged();
                     break;
                 default:
@@ -58,20 +60,13 @@ public class PeopleFragment extends Fragment {
     private BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
+            Log.d(TAG, "GOTO broadcastReceiver onReceive");
             try {
-                Log.d(TAG, "GOTO broadcastReceiver onReceive");
                 String myAction = intent.getStringExtra(ConstantValue.ACTION);
                 if (myAction.equals(ConstantValue.ACTION_ADD_USER)) {
                     final User user = (User) intent.getSerializableExtra(ConstantValue.EXTRA_USER);
                     final boolean needRespond = intent.getBooleanExtra(ConstantValue.EXTRA_NEED_RESPOND, false);
                     mLstUsers.addUser(user);
-                    mLvPeople.post(new Runnable() {
-                        @Override
-                        public void run() {
-                            mAdaptorPeople.notifyDataSetChanged();
-                        }
-                    });
-//                    runUpdateThread();
                     if (needRespond) {
                         getActivity().startService(new Intent(getActivity(), ProServerService.class)
                                 .setAction(ConstantValue.ACTION_CONNECT)
@@ -87,21 +82,21 @@ public class PeopleFragment extends Fragment {
 
                     User user = (User) mContainer.getTag(R.id.TAG_USER_SELECTED);
                     if (curFrag == 0 || user == null || !user.getIpAddress().equals(cmd.getSenderAddress())) {
-                        mLstUsers.getUserByIP(cmd.getSenderAddress()).addMessage(cmd.getmFromUser() + ": " + cmd.getContent(),true);
+                        mLstUsers.getUserByIP(cmd.getSenderAddress()).addMessage(cmd.getmFromUser() + ": " + cmd.getContent(), true);
                     } else {
-                        mLstUsers.getUserByIP(cmd.getSenderAddress()).addMessage(cmd.getmFromUser() + ": " + cmd.getContent(),false);
+                        mLstUsers.getUserByIP(cmd.getSenderAddress()).addMessage(cmd.getmFromUser() + ": " + cmd.getContent(), false);
                     }
-                    mLvPeople.post(new Runnable() {
-                        @Override
-                        public void run() {
-                            mAdaptorPeople.notifyDataSetChanged();
-                        }
-                    });
                 }
-                Log.d(TAG, "OUT broadcastReceiver onReceive");
+                if (myAction.equals(ConstantValue.ACTION_STOP_SERVICE)){
+                    mLstUsers.clear();
+                    mLvPeople.invalidate();
+                }
+                runUpdateThread();
             } catch (Exception e) {
+                Log.e(TAG, "BroadcastReceive onReceive exception");
                 e.printStackTrace();
             }
+            Log.d(TAG, "OUT broadcastReceiver onReceive");
         }
     };
 
@@ -147,9 +142,27 @@ public class PeopleFragment extends Fragment {
                 });
             }
         });
+
+        registerForContextMenu(mLvPeople);
         Log.d(TAG, "OUT initData");
     }
-
+    @Override
+    public void onCreateContextMenu(ContextMenu menu, View v,
+                                    ContextMenu.ContextMenuInfo menuInfo) {
+        if (v.getId()==R.id.listView) {
+            AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo)menuInfo;
+            menu.setHeaderTitle("TEST");
+            menu.add("gege");
+            menu.add("gege");
+        }
+    }
+    @Override
+    public boolean onContextItemSelected(MenuItem item) {
+        AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo)item.getMenuInfo();
+        int menuItemIndex = item.getItemId();
+        
+        return true;
+    }
     @Override
     public void onResume() {
         Log.d(TAG, "GOTO onResume");
@@ -166,11 +179,6 @@ public class PeopleFragment extends Fragment {
         Log.d(TAG, "OUT onDestroy");
     }
 
-    @Override
-    public void onPause() {
-        super.onPause();
-    }
-
     private void runUpdateThread() {
         new Thread(
                 new Runnable() {
@@ -179,7 +187,7 @@ public class PeopleFragment extends Fragment {
                         try {
                             Thread.sleep(500); // Sleep for 1 second
 
-                            myHandler.obtainMessage(UPDATE_DOWNLOAD_PROGRESS)
+                            myHandler.obtainMessage(UPDATE_LISTVIEW)
                                     .sendToTarget();
                         } catch (InterruptedException e) {
                             Log.d(TAG, "sleep failure");
@@ -187,6 +195,19 @@ public class PeopleFragment extends Fragment {
 
                     }
                 }).start();
+    }
+
+    @Override
+    public void setMenuVisibility(boolean menuVisible) {
+        super.setMenuVisibility(menuVisible);
+        try {
+            if (menuVisible){
+                runUpdateThread();
+            }
+        } catch (Exception e) {
+            Log.e(TAG,"setMenuVisibility");
+            e.printStackTrace();
+        }
     }
 
     private class MyPeopleAdaptor extends BaseAdapter {
