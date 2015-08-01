@@ -1,12 +1,11 @@
 package huybdse02612.fpt.edu.Fragment;
 
-import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.Color;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -16,7 +15,6 @@ import android.util.Log;
 import android.view.ContextMenu;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
@@ -30,7 +28,7 @@ import huybdse02612.fpt.edu.Entity.CommandMessageType;
 import huybdse02612.fpt.edu.Entity.ListUsers;
 import huybdse02612.fpt.edu.Entity.User;
 import huybdse02612.fpt.edu.R;
-import huybdse02612.fpt.edu.Service.ProServerService;
+import huybdse02612.fpt.edu.Service.ServerService;
 import huybdse02612.fpt.edu.Util.ConstantValue;
 
 /**
@@ -68,7 +66,7 @@ public class PeopleFragment extends Fragment {
                     final boolean needRespond = intent.getBooleanExtra(ConstantValue.EXTRA_NEED_RESPOND, false);
                     mLstUsers.addUser(user);
                     if (needRespond) {
-                        getActivity().startService(new Intent(getActivity(), ProServerService.class)
+                        getActivity().startService(new Intent(getActivity(), ServerService.class)
                                 .setAction(ConstantValue.ACTION_CONNECT)
                                 .putExtra(ConstantValue.EXTRA_COMMAND_MESSAGE,
                                         new CommandMessage(CommandMessageType.CONNECT_RESPOND,
@@ -167,29 +165,33 @@ public class PeopleFragment extends Fragment {
     public void onResume() {
         Log.d(TAG, "GOTO onResume");
         super.onResume();
-        getActivity().registerReceiver(broadcastReceiver, new IntentFilter(ConstantValue.MY_BROADCAST));
         Log.d(TAG, "OUT onResume");
     }
 
     @Override
     public void onDestroy() {
         Log.d(TAG, "GOTO onDestroy");
-        getActivity().unregisterReceiver(broadcastReceiver);
-        getActivity().stopService(new Intent(getActivity().getApplicationContext(), ProServerService.class));
+        try {
+            getActivity().unregisterReceiver(broadcastReceiver);
+            getActivity().stopService(new Intent(getActivity().getApplicationContext(), ServerService.class));
+            mContainer.setTag(R.id.TAG_SERVICE_IS_START,false);
+        } catch (Exception e) {
+            Log.e(TAG,"onDestroy");
+            e.printStackTrace();
+        }
         Log.d(TAG, "OUT onDestroy");
     }
 
-    private void runUpdateThread() {
+    private synchronized void runUpdateThread() {
         new Thread(
                 new Runnable() {
                     @Override
                     public void run() {
                         try {
-                            Thread.sleep(500); // Sleep for 1 second
-
+                            Thread.sleep(100);
                             myHandler.obtainMessage(UPDATE_LISTVIEW)
                                     .sendToTarget();
-                        } catch (InterruptedException e) {
+                        } catch (Exception e) {
                             Log.d(TAG, "sleep failure");
                         }
 

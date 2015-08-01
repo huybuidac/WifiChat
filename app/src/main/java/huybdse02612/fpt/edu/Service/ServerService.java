@@ -24,7 +24,7 @@ import huybdse02612.fpt.edu.Util.ConstantValue;
 /**
  * Created by huy on 7/21/2015.
  */
-public class ProServerService extends Service {
+public class ServerService extends Service {
 
     private final String TAG = this.getClass().getName();
     Thread waitClientThread;
@@ -54,7 +54,7 @@ public class ProServerService extends Service {
     public int onStartCommand(final Intent intent, int flags, int startId) {
         Log.d(TAG, "GOTO onStartCommand");
         try {
-            if (mIsRunning != true) startListening();
+//            if (mIsRunning != true) startListening();
             if (intent.getAction() != null) {
                 CommandMessage cmd = (CommandMessage) intent.getSerializableExtra(ConstantValue.EXTRA_COMMAND_MESSAGE);
                 switch (intent.getAction()) {
@@ -85,7 +85,7 @@ public class ProServerService extends Service {
                 for (Enumeration<InetAddress> enumIpAddr = intf.getInetAddresses(); enumIpAddr.hasMoreElements(); ) {
                     InetAddress inetAddress = enumIpAddr.nextElement();
                     if (!inetAddress.isLoopbackAddress()) {
-                        mListLocalAddress.add(inetAddress.getHostAddress().toString());
+                        mListLocalAddress.add(inetAddress.getHostAddress());
                     }
                 }
             }

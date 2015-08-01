@@ -11,7 +11,7 @@ import android.widget.TabHost;
 
 import huybdse02612.fpt.edu.Entity.TabManager;
 import huybdse02612.fpt.edu.R;
-import huybdse02612.fpt.edu.Service.ProServerService;
+import huybdse02612.fpt.edu.Service.ServerService;
 
 
 public class MainActivity extends FragmentActivity {
@@ -60,7 +60,8 @@ public class MainActivity extends FragmentActivity {
     protected void onDestroy() {
         try {
             super.onDestroy();
-            stopService(new Intent(getApplicationContext(), ProServerService.class));
+            stopService(new Intent(getApplicationContext(), ServerService.class));
+            mViewPager.setTag(R.id.TAG_SERVICE_IS_START,false);
         } catch (Exception e) {
             Log.e(TAG,"MainACtivity exception");
             e.printStackTrace();

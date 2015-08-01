@@ -9,7 +9,6 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
-import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.util.Log;
@@ -21,12 +20,12 @@ import android.widget.Button;
 import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.Switch;
+import android.widget.Toast;
 
 import huybdse02612.fpt.edu.Entity.CommandMessage;
 import huybdse02612.fpt.edu.Entity.CommandMessageType;
-import huybdse02612.fpt.edu.Entity.User;
 import huybdse02612.fpt.edu.R;
-import huybdse02612.fpt.edu.Service.ProServerService;
+import huybdse02612.fpt.edu.Service.ServerService;
 import huybdse02612.fpt.edu.Util.ConstantValue;
 import huybdse02612.fpt.edu.Util.PreferencesLib;
 
@@ -52,10 +51,12 @@ public class SettingFragment extends Fragment {
                     boolean noConnectivity = intent.getBooleanExtra(
                             ConnectivityManager.EXTRA_NO_CONNECTIVITY, false);
 
-                    if (!noConnectivity) {
+                    if (noConnectivity) {
                         if (swtEnableLanChat!=null && swtEnableLanChat.isChecked()) {
-                            context.stopService(new Intent(context, ProServerService.class));
+                            context.stopService(new Intent(context, ServerService.class));
+                            mContainer.setTag(R.id.TAG_SERVICE_IS_START, false);
                             swtEnableLanChat.setChecked(false);
+                            Toast.makeText(context,"Lost wifi connection!",Toast.LENGTH_SHORT).show();
                         }
                     }
                 }
@@ -103,15 +104,18 @@ public class SettingFragment extends Fragment {
                                     .show();
                         } else {
                             mContainer.setTag(R.id.TAG_USER_NAME, mEdtName.getText().toString());
-                            getActivity().startService(new Intent(getActivity(), ProServerService.class)
+                            PreferencesLib.writeString(getActivity(), PreferencesLib.NAME, mEdtName.getText().toString());
+                            getActivity().startService(new Intent(getActivity(), ServerService.class)
                                     .setAction(ConstantValue.ACTION_CONNECT)
                                     .putExtra(ConstantValue.EXTRA_COMMAND_MESSAGE,
                                             new CommandMessage(CommandMessageType.CONNECT,
                                                     ((EditText) getActivity().findViewById(R.id.edtName)).getText().toString(),
                                                     "", "255.255.255.255")));
+                            mContainer.setTag(R.id.TAG_SERVICE_IS_START, true);
                         }
                     } else {
-                        getActivity().stopService(new Intent(getActivity(), ProServerService.class));
+                        getActivity().stopService(new Intent(getActivity(), ServerService.class));
+                        mContainer.setTag(R.id.TAG_SERVICE_IS_START,false);
                     }
                 } catch (Exception e) {
                     Log.e(TAG,"swtEnableLanChat.setOnCheckedChangeListener");
@@ -172,12 +176,26 @@ public class SettingFragment extends Fragment {
     @Override
     public void onDestroy() {
         Log.d(TAG, "GOTO onDestroy");
-        super.onDestroy();
-        getActivity().stopService(new Intent(getActivity(), ProServerService.class));
+        try {
+            super.onDestroy();
+            getActivity().stopService(new Intent(getActivity(), ServerService.class));
+            mContainer.setTag(R.id.TAG_SERVICE_IS_START,false);
+        } catch (Exception e) {
+            Log.e(TAG,"onDestroy");
+            e.printStackTrace();
+        }
         Log.d(TAG, "OUT onDestroy");
     }
 
-//    @Override
+    @Override
+    public void onResume() {
+        Log.d(TAG, "GOTO onResume");
+        super.onResume();
+
+        Log.d(TAG, "OUT onResume");
+    }
+
+    //    @Override
 //    public void onResume() {
 //        Log.d(TAG, "GOTO onResume");
 //

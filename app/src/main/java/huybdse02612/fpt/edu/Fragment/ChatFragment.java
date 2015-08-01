@@ -1,7 +1,6 @@
 package huybdse02612.fpt.edu.Fragment;
 
 
-import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -17,12 +16,13 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ScrollView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import huybdse02612.fpt.edu.Entity.CommandMessage;
 import huybdse02612.fpt.edu.Entity.CommandMessageType;
 import huybdse02612.fpt.edu.Entity.User;
 import huybdse02612.fpt.edu.R;
-import huybdse02612.fpt.edu.Service.ProServerService;
+import huybdse02612.fpt.edu.Service.ServerService;
 import huybdse02612.fpt.edu.Util.ConstantValue;
 
 /**
@@ -77,7 +77,7 @@ public class ChatFragment extends Fragment {
 
         getViewFromLayout();
         setEvent();
-
+        getActivity().registerReceiver(broadcastReceiver, new IntentFilter(ConstantValue.MY_BROADCAST));
         mContainer = container;
         Log.d(TAG, "OUT onCreateView");
         return mChatFrag;
@@ -88,14 +88,18 @@ public class ChatFragment extends Fragment {
             @Override
             public void onClick(View v) {
                 try {
-                    if (mCurUser == null) return;
+                    if (mCurUser == null || !((boolean) mContainer.getTag(R.id.TAG_SERVICE_IS_START))) {
+                        Toast.makeText(getActivity(),"Please start service and choose user!",Toast.LENGTH_SHORT).show();
+                        return;
+                    }
                     String mess = mEdtInput.getText().toString();
                     mCurUser.addMessage("You: " + mess, false);
                     mTvChatArea.append("You: " + mess + "\r\n");
                     mEdtInput.setText("");
-                    getActivity().startService(new Intent(getActivity(), ProServerService.class)
-                            .setAction(ConstantValue.ACTION_SEND_MESSAGE)
-                            .putExtra(ConstantValue.EXTRA_COMMAND_MESSAGE, new CommandMessage(CommandMessageType.MESSAGE, mName, mess, mCurUser.getIpAddress())));
+                        getActivity().startService(new Intent(getActivity(), ServerService.class)
+                                .setAction(ConstantValue.ACTION_SEND_MESSAGE)
+                                .putExtra(ConstantValue.EXTRA_COMMAND_MESSAGE,
+                                        new CommandMessage(CommandMessageType.MESSAGE, mName, mess, mCurUser.getIpAddress())));
                     scrollToLastLine();
                 } catch (Exception e) {
                     Log.e(TAG, "mBtnSend Onclick");
@@ -126,7 +130,8 @@ public class ChatFragment extends Fragment {
                 mName = (String) mContainer.getTag(R.id.TAG_USER_NAME);
                 if (mName == null) mName = "Unknown";
             } else {
-                InputMethodManager imm = (InputMethodManager) getActivity().getSystemService(getActivity().getApplicationContext().INPUT_METHOD_SERVICE);
+                InputMethodManager imm = (InputMethodManager) getActivity()
+                        .getSystemService(getActivity().getApplicationContext().INPUT_METHOD_SERVICE);
                 imm.hideSoftInputFromWindow(mEdtInput.getWindowToken(), 0);
             }
         } catch (Exception e) {
@@ -139,9 +144,15 @@ public class ChatFragment extends Fragment {
     @Override
     public void onDestroy() {
         Log.d(TAG, "GOTO onDestroy");
-        super.onDestroy();
-        getActivity().unregisterReceiver(broadcastReceiver);
-        getActivity().stopService(new Intent(getActivity().getApplicationContext(), ProServerService.class));
+        try {
+            super.onDestroy();
+            getActivity().unregisterReceiver(broadcastReceiver);
+            getActivity().stopService(new Intent(getActivity().getApplicationContext(), ServerService.class));
+            mContainer.setTag(R.id.TAG_SERVICE_IS_START, false);
+        } catch (Exception e) {
+            Log.e(TAG, "onDestroy");
+            e.printStackTrace();
+        }
         Log.d(TAG, "OUT onDestroy");
     }
 
@@ -149,7 +160,7 @@ public class ChatFragment extends Fragment {
     public void onResume() {
         Log.d(TAG, "GOTO onResume");
         super.onResume();
-        getActivity().registerReceiver(broadcastReceiver, new IntentFilter(ConstantValue.MY_BROADCAST));
+
         Log.d(TAG, "OUT onResume");
     }
 
