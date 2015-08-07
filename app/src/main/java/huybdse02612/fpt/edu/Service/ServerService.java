@@ -37,8 +37,8 @@ public class ServerService extends Service {
     public void onCreate() {
         Log.d(TAG, "GOTO onCreate");
         try {
-            mListLocalAddress = new ArrayList<>();
-            getLocalIpAddress();
+            // get all IP of this device
+            mListLocalAddress = getLocalIpAddress();
             mIsRunning = true;
             mMyBroadCast = new Intent(ConstantValue.MY_BROADCAST);
             startListening();
@@ -54,7 +54,6 @@ public class ServerService extends Service {
     public int onStartCommand(final Intent intent, int flags, int startId) {
         Log.d(TAG, "GOTO onStartCommand");
         try {
-//            if (mIsRunning != true) startListening();
             if (intent.getAction() != null) {
                 CommandMessage cmd = (CommandMessage) intent.getSerializableExtra(ConstantValue.EXTRA_COMMAND_MESSAGE);
                 switch (intent.getAction()) {
@@ -78,20 +77,23 @@ public class ServerService extends Service {
         return super.onStartCommand(intent, flags, startId);
     }
 
-    private void getLocalIpAddress() {
+    private ArrayList<String> getLocalIpAddress() {
         try {
+            ArrayList<String> lstIP = new ArrayList<>();
             for (Enumeration<NetworkInterface> en = NetworkInterface.getNetworkInterfaces(); en.hasMoreElements(); ) {
                 NetworkInterface intf = en.nextElement();
                 for (Enumeration<InetAddress> enumIpAddr = intf.getInetAddresses(); enumIpAddr.hasMoreElements(); ) {
                     InetAddress inetAddress = enumIpAddr.nextElement();
                     if (!inetAddress.isLoopbackAddress()) {
-                        mListLocalAddress.add(inetAddress.getHostAddress());
+                        lstIP.add(inetAddress.getHostAddress().toString());
                     }
                 }
             }
+            return lstIP;
         } catch (SocketException ex) {
             Log.e("ServerActivity", ex.toString());
         }
+        return null;
     }
 
     @Override

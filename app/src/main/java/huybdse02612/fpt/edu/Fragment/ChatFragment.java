@@ -43,21 +43,20 @@ public class ChatFragment extends Fragment {
     private BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
+            Log.d(TAG, "GOTO broadcastReceiver onReceive");
             try {
-                Log.d(TAG, "GOTO broadcastReceiver onReceive");
                 String myAction = intent.getStringExtra(ConstantValue.ACTION);
                 if (myAction.equals(ConstantValue.ACTION_RECEIVE_MESSAGE)) {
                     CommandMessage cmd = (CommandMessage) intent.getSerializableExtra(ConstantValue.EXTRA_CMD);
                     if (mCurUser.getIpAddress().equals(cmd.getSenderAddress())) {
                         mTvChatArea.append(cmd.getmFromUser() + ": " + cmd.getContent() + "\r\n");
-
                         scrollToLastLine();
                     }
                 }
-                Log.d(TAG, "OUT broadcastReceiver onReceive");
             } catch (Exception e) {
                 e.printStackTrace();
             }
+            Log.d(TAG, "OUT broadcastReceiver onReceive");
         }
     };
 
@@ -89,17 +88,18 @@ public class ChatFragment extends Fragment {
             public void onClick(View v) {
                 try {
                     if (mCurUser == null || !((boolean) mContainer.getTag(R.id.TAG_SERVICE_IS_START))) {
-                        Toast.makeText(getActivity(),"Please start service and choose user!",Toast.LENGTH_SHORT).show();
+                        Toast.makeText(getActivity(), "Please start service and choose user!", Toast.LENGTH_SHORT).show();
                         return;
                     }
-                    String mess = mEdtInput.getText().toString();
-                    mCurUser.addMessage("You: " + mess, false);
-                    mTvChatArea.append("You: " + mess + "\r\n");
+                    String message = mEdtInput.getText().toString();
+                    mCurUser.addMessage("You: " + message, false);
+                    mTvChatArea.append("You: " + message + "\r\n");
                     mEdtInput.setText("");
-                        getActivity().startService(new Intent(getActivity(), ServerService.class)
+                    getActivity().startService(
+                            new Intent(getActivity(), ServerService.class)
                                 .setAction(ConstantValue.ACTION_SEND_MESSAGE)
-                                .putExtra(ConstantValue.EXTRA_COMMAND_MESSAGE,
-                                        new CommandMessage(CommandMessageType.MESSAGE, mName, mess, mCurUser.getIpAddress())));
+                                .putExtra(ConstantValue.EXTRA_COMMAND_MESSAGE
+                            , new CommandMessage(CommandMessageType.MESSAGE, mName, message, mCurUser.getIpAddress())));
                     scrollToLastLine();
                 } catch (Exception e) {
                     Log.e(TAG, "mBtnSend Onclick");
